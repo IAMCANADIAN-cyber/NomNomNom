@@ -1,4 +1,5 @@
 import click
+from context_distiller.ingest.discover import ingest_pipeline
 
 @click.group()
 def cli():
@@ -11,8 +12,7 @@ def ingest(folder):
     Ingests a folder into the context distiller.
     """
     click.echo(f"Ingesting folder: {folder}")
-    # This is a stub for now.
-    # In the future, this will call the ingestion pipeline.
+    ingest_pipeline(folder)
     click.echo("Ingestion complete.")
 
 @cli.command()
