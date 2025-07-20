@@ -1,5 +1,6 @@
 import click
 from context_distiller.ingest.discover import ingest_pipeline
+from context_distiller.retrieval.retrieve import retrieve_chunks
 
 @click.group()
 def cli():
@@ -23,12 +24,15 @@ def query(task, capsule_path):
     Queries the context distiller with a task.
     """
     click.echo(f"Querying with task: {task}")
-    click.echo(f"Saving capsule to: {capsule_path}")
-    # This is a stub for now.
-    # In the future, this will call the retrieval and capsule assembly pipeline.
+
+    chunks = retrieve_chunks(task, top_k=1)
+
     with open(capsule_path, 'w') as f:
-        f.write("This is a stub capsule.")
-    click.echo("Capsule generated.")
+        for chunk in chunks:
+            f.write(chunk.text)
+            f.write("\n\n")
+
+    click.echo(f"Capsule generated and saved to: {capsule_path}")
 
 if __name__ == '__main__':
     cli()
