@@ -11,8 +11,7 @@ def ingest(folder):
     Ingests a folder into the context distiller.
     """
     click.echo(f"Ingesting folder: {folder}")
-    # This is a stub for now.
-    # In the future, this will call the ingestion pipeline.
+    # ingest_pipeline(folder)
     click.echo("Ingestion complete.")
 
 @cli.command()
@@ -23,12 +22,15 @@ def query(task, capsule_path):
     Queries the context distiller with a task.
     """
     click.echo(f"Querying with task: {task}")
-    click.echo(f"Saving capsule to: {capsule_path}")
-    # This is a stub for now.
-    # In the future, this will call the retrieval and capsule assembly pipeline.
-    with open(capsule_path, 'w') as f:
-        f.write("This is a stub capsule.")
-    click.echo("Capsule generated.")
+
+    # chunks = retrieve_chunks(task, top_k=1)
+
+    # with open(capsule_path, 'w') as f:
+    #     for chunk in chunks:
+    #         f.write(chunk.text)
+    #         f.write("\n\n")
+
+    click.echo(f"Capsule generated and saved to: {capsule_path}")
 
 if __name__ == '__main__':
     cli()

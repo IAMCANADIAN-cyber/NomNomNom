@@ -1,0 +1,63 @@
+# This is a default configuration file.
+# You can override these settings by creating a `config.yaml` file in the root of the project.
+
+ingestion:
+  max_file_size_mb: 200
+  include_extensions: [".pdf",".docx",".txt",".md",".csv",".json",".xlsx",".pptx",".png",".jpg",".log"]
+  follow_symlinks: false
+  ocr:
+    enable: true
+    engine: tesseract
+    fast_mode_skip_if_pages_over: 1500
+  images:
+    caption: true
+    clip_embeddings: true
+    phash_dedupe_distance: 6
+    max_images: 500
+  tables:
+    sample_rows: 5000
+    histogram_bins: 16
+  logs:
+    template_engine: drain
+  pii_redaction: true
+
+embeddings:
+  text_model: "minilm-384"
+  image_model: "clip-vit-b32"
+  batch_size: 32
+
+llm:
+  provider: lmstudio
+  base_url: "http://127.0.0.1:1234/v1"
+  models:
+    fast: "mistral-7b-instruct"
+    quality: "mixtral-8x7b-instruct"   # example
+  temps:
+    query_expansion: 0.4
+    fusion: 0.2
+    global_summary: 0.15
+    compression: 0.1
+  retries: 2
+  timeout_seconds: 60
+
+retrieval:
+  k_initial: 400
+  mmr_lambda: 0.65
+  modality_weights:
+    text: 0.6
+    table: 0.2
+    image: 0.2
+
+capsule:
+  target_tokens: 4000
+  quotas:
+    tables: 400
+    images: 300
+    logs: 300
+    exemplars: 500
+    glossary: 250
+  guaranteed_sections: ["global_abstract","entity_glossary","outliers"]
+
+evaluation:
+  qa_pairs: 40
+  similarity_threshold: 0.9
