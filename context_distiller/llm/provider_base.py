@@ -1,14 +1,10 @@
 from abc import ABC, abstractmethod
 
 class LLMProvider(ABC):
-    """Base class for LLM providers."""
-
     @abstractmethod
-    def chat(self, messages: list, temperature: float, max_tokens: int, stream: bool) -> str:
-        """Chats with the LLM."""
+    def chat(self, messages, temperature, max_tokens, stream):
         pass
 
     @abstractmethod
-    def estimate_tokens(self, text: str) -> int:
-        """Estimates the number of tokens in a text."""
+    def estimate_tokens(self, text):
         pass

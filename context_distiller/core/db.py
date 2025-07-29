@@ -1,12 +1,11 @@
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, JSON, Text, ForeignKey, LargeBinary
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
+import sqlalchemy
+from sqlalchemy import create_engine, Column, Integer, String, Float, Text, LargeBinary, JSON, DateTime, ForeignKey
+from sqlalchemy.orm import sessionmaker, declarative_base
 
 Base = declarative_base()
 
 class File(Base):
     __tablename__ = 'files'
-
     file_id = Column(Integer, primary_key=True)
     path = Column(String, unique=True)
     type = Column(String)
@@ -16,11 +15,9 @@ class File(Base):
     content_hash = Column(String, unique=True)
     status = Column(String)
     meta_json = Column(JSON)
-    extracted_text = Column(Text)
 
 class Chunk(Base):
     __tablename__ = 'chunks'
-
     chunk_id = Column(Integer, primary_key=True)
     file_id = Column(Integer, ForeignKey('files.file_id'))
     modality = Column(String)
@@ -28,7 +25,15 @@ class Chunk(Base):
     token_len = Column(Integer)
     text = Column(Text)
     meta_json = Column(JSON)
-    embedding = Column(LargeBinary)
+
+class Embedding(Base):
+    __tablename__ = 'embeddings'
+    embedding_id = Column(Integer, primary_key=True)
+    chunk_id = Column(Integer, ForeignKey('chunks.chunk_id'))
+    modality = Column(String)
+    model = Column(String)
+    dim = Column(Integer)
+    vector = Column(LargeBinary)
 
 def get_engine(db_path='context_distiller.db'):
     return create_engine(f'sqlite:///{db_path}')
