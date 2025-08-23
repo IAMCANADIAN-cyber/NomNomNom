@@ -2,3 +2,7 @@ beautifulsoup4
 sentence-transformers
 sqlalchemy
 click
+pypdf
+python-docx
+nltk
+faiss-cpu
