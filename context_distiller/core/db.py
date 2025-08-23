@@ -28,6 +28,11 @@ class Chunk(Base):
     meta_json = Column(JSON)
     embedding = Column(LargeBinary)
 
+class IndexMapping(Base):
+    __tablename__ = 'index_mappings'
+    faiss_index = Column(Integer, primary_key=True)
+    chunk_id = Column(Integer, ForeignKey('chunks.chunk_id'), unique=True)
+
 def get_engine(db_path='context_distiller.db'):
     return create_engine(f'sqlite:///{db_path}')
 
