@@ -33,6 +33,22 @@ class IndexMapping(Base):
     faiss_index = Column(Integer, primary_key=True)
     chunk_id = Column(Integer, ForeignKey('chunks.chunk_id'), unique=True)
 
+class Entity(Base):
+    __tablename__ = 'entities'
+    entity_id = Column(Integer, primary_key=True)
+    text = Column(String, index=True)
+    label = Column(String)
+    kb_id = Column(String, index=True) # Knowledge Base ID
+
+    __table_args__ = (sqlalchemy.UniqueConstraint('text', 'label', name='_text_label_uc'),)
+
+class EntityChunkLink(Base):
+    __tablename__ = 'entity_chunk_links'
+    entity_id = Column(Integer, ForeignKey('entities.entity_id'), primary_key=True)
+    chunk_id = Column(Integer, ForeignKey('chunks.chunk_id'), primary_key=True)
+    start_char = Column(Integer)
+    end_char = Column(Integer)
+
 def get_engine(db_path='context_distiller.db'):
     return create_engine(f'sqlite:///{db_path}')
 
