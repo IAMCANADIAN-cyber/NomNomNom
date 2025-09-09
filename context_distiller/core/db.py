@@ -1,4 +1,5 @@
 import sqlalchemy
+import datetime
 from sqlalchemy import create_engine, Column, Integer, String, Float, Text, LargeBinary, JSON, DateTime, ForeignKey
 from sqlalchemy.orm import sessionmaker, declarative_base
 
@@ -48,6 +49,25 @@ class EntityChunkLink(Base):
     chunk_id = Column(Integer, ForeignKey('chunks.chunk_id'), primary_key=True)
     start_char = Column(Integer)
     end_char = Column(Integer)
+
+class LLMCache(Base):
+    __tablename__ = 'llm_cache'
+    cache_id = Column(Integer, primary_key=True)
+    key_hash = Column(String, unique=True, index=True)
+    request_json = Column(JSON)
+    response_text = Column(Text)
+    input_tokens = Column(Integer)
+    output_tokens = Column(Integer)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+class Summary(Base):
+    __tablename__ = 'summaries'
+    summary_id = Column(Integer, primary_key=True)
+    level = Column(Integer, index=True)
+    text = Column(Text)
+    model = Column(String)
+    token_len = Column(Integer)
+    provenance_chunk_ids = Column(JSON) # List of chunk_ids this summary is derived from
 
 def get_engine(db_path='context_distiller.db'):
     return create_engine(f'sqlite:///{db_path}')

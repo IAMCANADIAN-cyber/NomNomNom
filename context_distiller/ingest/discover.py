@@ -5,11 +5,13 @@ import datetime
 import numpy as np
 import faiss
 
-from context_distiller.core.db import get_engine, create_tables, get_session, File, Chunk, IndexMapping, Entity, EntityChunkLink
+from context_distiller.core.db import get_engine, create_tables, get_session, File, Chunk, IndexMapping, Entity, EntityChunkLink, Summary
 from context_distiller.ingest.extract import extract_text
 from context_distiller.represent.chunking import chunk_text
 from context_distiller.represent.embeddings import get_embedding_model, generate_embeddings
 from context_distiller.represent.entities import get_spacy_model, extract_entities
+from context_distiller.summarize.l2_summarizer import generate_l2_summary_for_chunks
+from context_distiller.llm.lmstudio_client import LMStudioClient
 
 def discover_files(start_path):
     """
@@ -42,6 +44,7 @@ def ingest_pipeline(folder, db_path='context_distiller.db', index_path='context_
     session = get_session(engine)
     embedding_model = get_embedding_model()
     spacy_model = get_spacy_model()
+    llm_client = LMStudioClient(session)
     local_entity_cache = {} # Cache to prevent duplicate merges in a single session
 
     # --- Step 1: Ingest Files and Create Chunks ---
@@ -78,6 +81,7 @@ def ingest_pipeline(folder, db_path='context_distiller.db', index_path='context_
 
         embeddings = generate_embeddings(chunks, embedding_model)
 
+        file_chunks = []
         # Process each chunk for entities
         for i, chunk_text_content in enumerate(chunks):
             new_chunk = Chunk(
@@ -87,6 +91,7 @@ def ingest_pipeline(folder, db_path='context_distiller.db', index_path='context_
             )
             session.add(new_chunk)
             session.flush() # Flush to get the chunk_id for the link
+            file_chunks.append(new_chunk)
 
             # Extract and store entities for the new chunk
             entities = extract_entities(chunk_text_content, spacy_model)
@@ -117,6 +122,10 @@ def ingest_pipeline(folder, db_path='context_distiller.db', index_path='context_
                 links_in_this_chunk.add(link_key)
 
         session.commit()
+
+        # After processing all chunks for a file, generate L2 summary
+        if file_chunks:
+            generate_l2_summary_for_chunks(file_chunks, llm_client, session)
 
     # --- Step 2: Build/Rebuild the FAISS Index ---
     print("Building FAISS index...")

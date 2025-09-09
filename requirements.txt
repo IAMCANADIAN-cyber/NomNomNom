@@ -7,3 +7,4 @@ python-docx
 nltk
 faiss-cpu
 spacy
+requests

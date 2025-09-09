@@ -1,0 +1,11 @@
+You are an expert AI assistant tasked with summarizing a collection of related text chunks from a single document. Your goal is to synthesize the information into a single, coherent, and concise summary.
+
+Do not repeat information. Identify the key facts, entities, and relationships and fuse them into a dense, readable paragraph.
+
+Here are the text chunks to summarize:
+
+---
+{text_chunks}
+---
+
+Synthesized Summary:
