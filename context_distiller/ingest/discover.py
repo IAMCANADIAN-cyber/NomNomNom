@@ -4,9 +4,11 @@ from pathlib import Path
 import datetime
 import numpy as np
 import faiss
+import json
 
-from context_distiller.core.db import get_engine, create_tables, get_session, File, Chunk, IndexMapping, Entity, EntityChunkLink
+from context_distiller.core.db import get_engine, create_tables, get_session, File, Chunk, IndexMapping, Entity, EntityChunkLink, TableMeta
 from context_distiller.ingest.extract import extract_text
+from context_distiller.ingest.extract_tables import extract_table_data
 from context_distiller.represent.chunking import chunk_text
 from context_distiller.represent.embeddings import get_embedding_model, generate_embeddings
 from context_distiller.represent.entities import get_spacy_model, extract_entities
@@ -55,24 +57,71 @@ def ingest_pipeline(folder, db_path='context_distiller.db', index_path='context_
 
         print(f"Ingesting new file: {filepath}")
         stat = os.stat(filepath)
+        file_extension = filepath.suffix.lower()
 
-        text = extract_text(filepath)
-        if not text or not text.strip():
-            print(f"Skipping file with no extractable text: {filepath}")
-            continue
+        # This will hold the text to be chunked and embedded, whether from a text file or a table summary
+        text_for_embedding = ""
 
         new_file = File(
             path=str(filepath),
             size_bytes=stat.st_size,
             mtime=datetime.datetime.fromtimestamp(stat.st_mtime),
             content_hash=content_hash,
-            status='new',
-            extracted_text=text,
+            status='new'
         )
         session.add(new_file)
-        session.commit() # Commit to get file_id
+        session.commit() # Commit to get file_id, which we need for table metadata
 
-        chunks = chunk_text(text)
+        # --- Step 2: Extraction and Routing ---
+        if file_extension in ['.csv', '.xlsx', '.xls']:
+            table_profiles = extract_table_data(filepath)
+            if not table_profiles:
+                print(f"Skipping table file with no extractable data: {filepath}")
+                continue
+
+            # Create a textual summary of the table profiles for embedding
+            summary_parts = []
+            for profile in table_profiles:
+                # Save the detailed profile to the database
+                table_meta = TableMeta(
+                    file_id=new_file.file_id,
+                    sheet_name=profile['sheet_name'],
+                    n_rows=profile['n_rows'],
+                    n_cols=profile['n_cols'],
+                    profile_json=profile['profile_json'],
+                    exemplars_json=profile['exemplars_json']
+                )
+                session.add(table_meta)
+
+                # Build the text summary
+                summary_parts.append(f"Sheet: {profile['sheet_name']} ({profile['n_rows']} rows, {profile['n_cols']} columns)")
+                profile_data = json.loads(profile['profile_json'])
+                for col, info in profile_data.items():
+                    summary_parts.append(f"  - Column '{col}' (type: {info.get('dtype')})")
+                exemplars = json.loads(profile['exemplars_json'])
+                if exemplars:
+                    summary_parts.append("    Exemplars:")
+                    for row in exemplars:
+                        summary_parts.append(f"      {row}")
+
+            text_for_embedding = "\n".join(summary_parts)
+            new_file.extracted_text = text_for_embedding # Save the summary
+
+        else: # Default to text extraction
+            text = extract_text(filepath)
+            if not text or not text.strip():
+                print(f"Skipping file with no extractable text: {filepath}")
+                continue
+            text_for_embedding = text
+            new_file.extracted_text = text
+
+        session.commit() # Commit file text updates and table metadata
+
+        # --- Step 3: Chunking and Embedding ---
+        if not text_for_embedding:
+            continue
+
+        chunks = chunk_text(text_for_embedding)
         if not chunks:
             continue
 

@@ -49,6 +49,16 @@ class EntityChunkLink(Base):
     start_char = Column(Integer)
     end_char = Column(Integer)
 
+class TableMeta(Base):
+    __tablename__ = 'tables_meta'
+    table_id = Column(Integer, primary_key=True)
+    file_id = Column(Integer, ForeignKey('files.file_id'))
+    sheet_name = Column(String)
+    n_rows = Column(Integer)
+    n_cols = Column(Integer)
+    profile_json = Column(JSON)
+    exemplars_json = Column(JSON)
+
 def get_engine(db_path='context_distiller.db'):
     return create_engine(f'sqlite:///{db_path}')
 
